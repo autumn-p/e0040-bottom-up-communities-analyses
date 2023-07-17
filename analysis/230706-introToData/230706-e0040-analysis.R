@@ -27,6 +27,19 @@ appendCol <- read.table(appendCol_path, header = TRUE)
 datae0040meta <- left_join(datae0040, appendCol, by=c("well"))
 write.table(datae0040meta, "datae0040meta.txt", row.names = FALSE, quote = FALSE)
 
+# Set file path for the updated replicates column
+appendRep2_path <- "C:/Users/aparr/e0040-bottom-up-communities-analyses/data/replicates2.tsv"
+
+# Import metadata table
+appendRep2 <- read.table(appendRep2_path, header = TRUE)
+
+# Join the metadata table to the original data frame
+datae0040meta <- left_join(datae0040meta, appendRep2, by=c("well"))
+write.table(datae0040meta, "datae0040meta.txt", row.names = FALSE, quote = FALSE)
+
+# Filter the data frame to include only rows with relAbundance greater than 0.1%
+datae0040meta <- datae0040meta %>% filter(relAbundance > 0.001)
+
 # e0040.A - XEA b-u
 # Run the OTUs through dada 2 to get the ASVs
 # Relative abundance of top 15 families
@@ -126,7 +139,7 @@ write.table(blankWellTable, file = "blankWellTable.txt", quote = FALSE, row.name
 
 
 
-# I could make a bar plot showing the count or relative abundance of each community type 
+# Bar plot showing the count or relative abundance of each community type 
 # Summary of rel abundance by comm
 community_abundance <- aggregate(relAbundance ~ communityType, data = datae0040meta, FUN = sum)
 
@@ -193,13 +206,13 @@ postAbxV2_data <- datae0040meta[datae0040meta$communityType == "postAbxV2", ]
 # combined_prePost_data <- rbind(preAbx_data, postAbxV1_data, postAbxV2_data)
 
 # Create a boxplot using ggplot2
-relAbundance_boxPlot <- ggplot() +
-  geom_boxplot(data = preAbx_data, aes(x = communityType, y = relAbundance), fill = "steelblue", color = "black") +
-  geom_boxplot(data = postAbxV1_data, aes(x = communityType, y = relAbundance), fill = "steelblue", color = "black") +
-  geom_boxplot(data = postAbxV2_data, aes(x = communityType, y = relAbundance), fill = "steelblue", color = "black") +
+alpha_diversity_boxPlot <- ggplot() +
+  geom_boxplot(data = preAbx_data, aes(x = communityType, y = alpha_diversity_e0040), fill = "steelblue", color = "black") +
+  geom_boxplot(data = postAbxV1_data, aes(x = communityType, y = alpha_diversity_e0040), fill = "steelblue", color = "black") +
+  geom_boxplot(data = postAbxV2_data, aes(x = communityType, y = alpha_diversity_e0040), fill = "steelblue", color = "black") +
   xlab("Community Type") +
-  ylab("Relative Abundance") +
-  ggtitle("Distribution of Relative Abundance by Community Type") +
+  ylab("Alpha Diversity") +
+  ggtitle("Distribution of Alpha Diversity by Community Type") +
   theme_bw()
 
 # Save plot
