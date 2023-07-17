@@ -1,0 +1,5 @@
+well alpha_diversity
+A4 4
+B4 6
+C4 19
+D4 13
