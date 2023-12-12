@@ -5,12 +5,13 @@ library(dplyr)
 library(ggplot2)
 library(cowplot)
 library(VennDiagram) 
+library(DT)
 
 # Set up file paths
-outPath = "C:/Users/aparr/e0040-bottom-up-communities-analyses/analysis/out/71723_FinalOut" # out
-dataframePath = "C:/Users/aparr/e0040-bottom-up-communities-analyses/data/ps_all.txt.gz" #raw data
-appendCol_path <- "C:/Users/aparr/e0040-bottom-up-communities-analyses/data/metadatae0040.tsv" #metadata
-KCHpalette_path <- "C:/Users/aparr/e0040-bottom-up-communities-analyses/config/KCHcolors-Silva-partial.txt"
+outPath = "analysis/out/71723_FinalOut" # out
+dataframePath = "data/ps_all.txt.gz" #raw data
+appendCol_path <- "data/metadatae0040.tsv" #metadata
+KCHpalette_path <- "config/KCHcolors-Silva-partial.txt"
 
 # Import the color palette
 KCHpalette <- read.table(KCHpalette_path, header = TRUE)
@@ -263,4 +264,73 @@ taxa_venn_plot <- grid.arrange(
 # Display and save the Venn diagram
 grid.draw(taxa_venn_plot)
 save_plot(paste0(outPath, "/taxa_venn_plot2.png"), taxa_venn_plot)
+
+
+
+
+# Table of the ASVs per families in pre, post v1 and post v2
+# Filter data for the specified communities
+community_types_list <- c("preAbx", "postAbxV1", "postAbxV2")
+
+# Create a table with families and their counts for each recipient community
+e0040_OTU_table <- datae0040meta %>%
+  filter(communityType %in% community_types_list) %>%
+  group_by(communityType, Family) %>%
+  summarize(family_count = n_distinct(OTU)) %>%
+  spread(Family, family_count, fill = 0)
+
+# Convert the table to a format suitable for interactive display
+# factor and levels sets the custom order of the factor levels based on the order of community_types_list
+e0040_OTU_table_for_display <- e0040_OTU_table %>%
+  mutate(community_type = factor(communityType, levels = community_types_list)) %>%
+  arrange(community_type)
+
+# Create an interactive dataTable
+datatable(e0040_OTU_table_for_display,
+          options = list(pageLength = 10,
+                         lengthMenu = c(10, 20, 50),
+                         dom = 't',
+                         scrollX = TRUE),
+          rownames = FALSE)
+
+# Saving datatable to an HTML file
+e0040_OTU_per_recipient_datatable <- datatable(e0040_OTU_table_for_display)
+saveWidget(e0040_OTU_per_recipient_datatable, paste0(outPath, "/e0040_OTU_table.html"))
+
+
+
+# Filter data for the specified communities
+community_types_list <- c("preAbx", "postAbxV1", "postAbxV2")
+
+# Create a table with families for each recipient community
+e0040_family_table <- datae0040meta %>%
+  filter(communityType %in% community_types_list & replicate == "1" & media == "mBHI") %>%
+  group_by(communityType, Family) %>%
+  summarize(present = any(!is.na(Family))) %>%
+  spread(Family, present, fill = FALSE)
+
+# Convert the table to a format suitable for interactive display
+e0040_family_table_for_display <- e0040_family_table %>%
+  mutate(community_types = factor(communityType,
+                                      levels = c("preAbx", "postAbxV1", "postAbxV2"))) %>%
+  arrange(community_types)  # Reorder rows based on recipient_community levels
+
+# Select only the columns I want to display (excluding "community_types")
+e0040_columns_to_display <- setdiff(names(e0040_family_table_for_display), "community_types")
+
+# Create an interactive dataTable with background color formatting
+e0040_Family_presence_per_recipient_datatable <- datatable(e0040_family_table_for_display[, e0040_columns_to_display],
+                                                           options = list(pageLength = 10,
+                                                                          lengthMenu = c(10, 20, 50),
+                                                                          dom = 't',
+                                                                          scrollX = TRUE),
+                                                           rownames = FALSE) %>%
+  formatStyle(e0040_columns_to_display, valueColumns = e0040_columns_to_display,
+              backgroundColor = styleEqual(c(FALSE, TRUE), c("red", "lightgreen")))
+
+# Saving datatable to an HTML file
+saveWidget(e0040_Family_presence_per_recipient_datatable, paste0(outPath, "/e0040_family_presence_table.html"))
+
+
+
 
